@@ -376,6 +376,9 @@ public class CommandDecoder extends ReplayingDecoder<State> {
             } else if (error.startsWith("WAIT")) {
                 data.tryFailure(new RedisWaitException(error
                         + ". channel: " + channel + " data: " + data));
+            } else if (error.startsWith("READONLY")) {
+                data.tryFailure(new RedisReadonlyException(error
+                        + ". channel: " + channel + " data: " + data));
             } else if (error.startsWith("NOREPLICAS")) {
                 data.tryFailure(new RedisRetryException(error
                         + ". channel: " + channel + " data: " + data));
