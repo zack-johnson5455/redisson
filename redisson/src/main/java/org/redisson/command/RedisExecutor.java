@@ -112,6 +112,7 @@ public class RedisExecutor<V, R> {
     }
 
     public void execute() {
+        // this is where we could start a timer to track latency.
         if (mainPromise.isCancelled()) {
             free();
             return;
@@ -204,6 +205,7 @@ public class RedisExecutor<V, R> {
         timeout.ifPresent(Timeout::cancel);
 
         TimerTask task = timeout -> {
+            // error acquiring connection. what to do with this?
             if (connectionFuture.cancel(false)) {
                 exception = new RedisTimeoutException("Unable to acquire connection! " + this.connectionFuture +
                         "Increase connection pool size or timeout. "
@@ -283,6 +285,7 @@ public class RedisExecutor<V, R> {
                         }
 
                         if (writeFuture.isSuccess()) {
+                            // this is where you could mark a successful request or just increment total count.
                             return;
                         }
                     }
@@ -338,6 +341,7 @@ public class RedisExecutor<V, R> {
         }
 
         if (!future.isSuccess()) {
+            // this is where you could mark a full error.
             exception = new WriteRedisConnectionException(
                     "Unable to write command into connection! Increase nettyThreads setting. Node source: "
                     + source + ", connection: " + connection +
@@ -540,6 +544,7 @@ public class RedisExecutor<V, R> {
             if (cause instanceof RedisRetryException
                     || cause instanceof RedisReadonlyException) {
                 if (attempt < attempts) {
+                    // should we do anything if we trigger a retry?
                     onException();
                     connectionManager.getServiceManager().newTimeout(timeout -> {
                         attempt++;
@@ -578,9 +583,11 @@ public class RedisExecutor<V, R> {
     }
 
     protected void onException() {
+        // Is there a place where we should be tracking anything?
     }
 
     protected void handleError(CompletableFuture<RedisConnection> connectionFuture, Throwable cause) {
+        // is this a place wehre we should be tracking anytihng?
         mainPromise.completeExceptionally(cause);
         RedisClient client = connectionFuture.join().getRedisClient();
         client.getConfig().getFailedNodeDetector().onCommandFailed(cause);
@@ -590,6 +597,7 @@ public class RedisExecutor<V, R> {
     }
 
     protected void handleSuccess(CompletableFuture<R> promise, CompletableFuture<RedisConnection> connectionFuture, R res) throws ReflectiveOperationException {
+        // maybe this is where we increment request count?
         if (objectBuilder != null) {
             promise.complete((R) objectBuilder.tryHandleReference(res, referenceType));
         } else {
